@@ -14,7 +14,8 @@ import {
 
 export default function BMIWellnessApp() {
   const [weight, setWeight] = useState("");
-  const [height, setHeight] = useState("");
+  const [heightFeet, setHeightFeet] = useState("");
+  const [heightInches, setHeightInches] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("male");
   const [bmi, setBmi] = useState(null);
@@ -32,9 +33,44 @@ export default function BMIWellnessApp() {
     setHistory(stored);
   }, []);
 
+  // Convert feet and inches to meters
+  const convertHeightToMeters = () => {
+    if (heightFeet || heightInches) {
+      const feet = parseFloat(heightFeet) || 0;
+      const inches = parseFloat(heightInches) || 0;
+
+      // Convert to total inches first
+      const totalInches = feet * 12 + inches;
+
+      // Convert inches to meters (1 inch = 0.0254 meters)
+      const heightInMeters = totalInches * 0.0254;
+
+      return heightInMeters;
+    }
+    return 0;
+  };
+
+  // Convert feet and inches to centimeters for display
+  const convertHeightToCm = () => {
+    if (heightFeet || heightInches) {
+      const feet = parseFloat(heightFeet) || 0;
+      const inches = parseFloat(heightInches) || 0;
+
+      // Convert to total inches first
+      const totalInches = feet * 12 + inches;
+
+      // Convert inches to cm (1 inch = 2.54 cm)
+      const heightInCm = totalInches * 2.54;
+
+      return heightInCm.toFixed(1);
+    }
+    return 0;
+  };
+
   const calculateBMI = () => {
-    if (weight && height) {
-      const heightInMeters = height / 100;
+    const heightInMeters = convertHeightToMeters();
+
+    if (weight && heightInMeters > 0) {
       const bmiValue = (weight / (heightInMeters * heightInMeters)).toFixed(1);
       setBmi(bmiValue);
 
@@ -62,13 +98,16 @@ export default function BMIWellnessApp() {
       const maxIdeal = (24.9 * heightInMeters * heightInMeters).toFixed(1);
       setIdealWeight({ min: minIdeal, max: maxIdeal });
 
-      // Calculate BMR (Basal Metabolic Rate)
+      // Calculate BMR (Basal Metabolic Rate) using height in cm
       if (age) {
+        const heightInCm = convertHeightToCm();
         let bmrValue;
         if (gender === "male") {
-          bmrValue = (10 * weight + 6.25 * height - 5 * age + 5).toFixed(0);
+          bmrValue = (10 * weight + 6.25 * heightInCm - 5 * age + 5).toFixed(0);
         } else {
-          bmrValue = (10 * weight + 6.25 * height - 5 * age - 161).toFixed(0);
+          bmrValue = (10 * weight + 6.25 * heightInCm - 5 * age - 161).toFixed(
+            0
+          );
         }
         setBmr(bmrValue);
       }
@@ -78,7 +117,9 @@ export default function BMIWellnessApp() {
         date: new Date().toLocaleDateString(),
         time: new Date().toLocaleTimeString(),
         weight: parseFloat(weight),
-        height: parseFloat(height),
+        heightFeet: parseFloat(heightFeet) || 0,
+        heightInches: parseFloat(heightInches) || 0,
+        heightDisplay: `${heightFeet || 0}'${heightInches || 0}"`,
         bmi: parseFloat(bmiValue),
         category: cat,
       };
@@ -90,7 +131,8 @@ export default function BMIWellnessApp() {
 
   const resetCalculator = () => {
     setWeight("");
-    setHeight("");
+    setHeightFeet("");
+    setHeightInches("");
     setAge("");
     setBmi(null);
     setCategory("");
@@ -290,7 +332,7 @@ export default function BMIWellnessApp() {
                           {entry.category}
                         </p>
                         <p className="text-xs text-stone-500">
-                          {entry.weight}kg • {entry.height}cm
+                          {entry.weight}kg • {entry.heightDisplay}
                         </p>
                       </div>
                     </div>
@@ -345,15 +387,39 @@ export default function BMIWellnessApp() {
 
                 <div>
                   <label className="block text-sm font-medium mb-2 text-stone-700">
-                    Height (cm)
+                    Height
                   </label>
-                  <input
-                    type="number"
-                    value={height}
-                    onChange={(e) => setHeight(e.target.value)}
-                    placeholder="175"
-                    className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-600"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={heightFeet}
+                      onChange={(e) => setHeightFeet(e.target.value)}
+                      placeholder="5"
+                      min="0"
+                      max="9"
+                      className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-600"
+                    />
+                    <span className="flex items-center text-stone-500 text-sm">
+                      ft
+                    </span>
+                    <input
+                      type="number"
+                      value={heightInches}
+                      onChange={(e) => setHeightInches(e.target.value)}
+                      placeholder="8"
+                      min="0"
+                      max="11"
+                      className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-600"
+                    />
+                    <span className="flex items-center text-stone-500 text-sm">
+                      in
+                    </span>
+                  </div>
+                  {(heightFeet || heightInches) && (
+                    <p className="text-xs text-stone-400 mt-1">
+                      ({convertHeightToCm()} cm)
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -426,7 +492,7 @@ export default function BMIWellnessApp() {
             </div>
           </div>
 
-          {/* Result Card */}
+          {/* Result Card - Rest of the component remains the same */}
           <div className="bg-gradient-to-br from-stone-700 to-stone-900 rounded-lg shadow-sm p-8 text-white">
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-2">
